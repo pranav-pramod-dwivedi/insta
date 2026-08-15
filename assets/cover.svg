@@ -8,11 +8,10 @@
   </defs>
   <rect width="1200" height="300" fill="url(#bg)"/>
   <g transform="translate(930,95)">
-    <rect width="150" height="40" rx="20" fill="#ffffff"/>
-    <rect width="150" height="40" rx="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.0"/>
-    <text x="150" y="26" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="19" fill="#833ab4">insta ❤️</text>
+    <rect width="130" height="40" rx="20" fill="#ffffff"/>
+    <text x="65" y="26" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="19" fill="#833ab4">insta</text>
   </g>
   <text x="84" y="90" font-family="ui-sans-serif, sans-serif" font-size="42" font-weight="800" fill="#ffffff">insta</text>
   <text x="84" y="152" font-family="ui-sans-serif, sans-serif" font-size="24" fill="#ffe9c9">a tiny real-time chat that just works.</text>
-  <text x="88" y="222" font-family="ui-sans-serif, sans-serif" font-size="17" fill="#fff2e0" opacity="0.9">pick a name · open 2 tabs · type · done ✨</text>
+  <text x="88" y="222" font-family="ui-sans-serif, sans-serif" font-size="17" fill="#fff2e0" opacity="0.9">pick a name - open two tabs - type - done</text>
 </svg>

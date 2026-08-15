@@ -2,54 +2,55 @@
   <img src="assets/cover.svg" width="830" alt="insta cover" />
 </p>
 
-<h1 align="center">insta ❤️</h1>
+<h1 align="center">insta</h1>
 
 <p align="center">
-  <b>a tiny real-time chat that just works.</b>
-  <br/>Pick a name. Open two tabs. Type. Done. ✨
+  A tiny real-time chat that just works.<br/>
+  Don't let the name fool you. There are no feeds, no stories, no influencers.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/stack-Node%20%2B%20Express%20%2B%20Socket.io-833ab4" alt="stack" />
-  <img src="https://img.shields.io/badge/scope-minimal%20&%20snappy-fd1d1d" alt="scope" />
+  <img src="https://img.shields.io/badge/scope-small%20and%20quick-fd1d1d" alt="scope" />
 </p>
 
----
+Pick a name, open the page, type. Messages show up everywhere that's connected the
+moment you hit send. That's the whole app. It's meant to be that small.
 
-Don't let the name fool you — **insta** is a happy little chat demo. No feeds, no stories,
-no DMs you didn't ask for. Just messages that appear everywhere the moment you hit send. 🚀
+## What it does
 
-## ✨ What it does
+- A dropdown to set your name (Pranav or Naman).
+- Send a message and it broadcasts to every open tab and device.
+- Nothing gets saved. Reload the page and it's a fresh room.
 
-- 🎭 Drop-down your name (**Pranav** / **Naman**).
-- ⚡ Send a message → it broadcasts to every open tab &amp; device, live.
-- 🧼 Nothing stored — reload and it's a clean slate (by design).
-
-## ▶️ Quick start
+## Run it
 
 ```bash
 npm install
-npm start        # → http://localhost:3000
+npm start     # → http://localhost:3000
 ```
 
-To watch the magic, open a **second tab**, switch names, and message yourself. 🪄
+To see it do its thing, open a **second tab**, pick the other name, and message
+yourself back and forth. I know, deeply sad. It works though.
 
-### Chat with a friend (same Wi-Fi) 🏠
-1. Server runs on one machine.
-2. IP it up: `ifconfig | grep inet` (macOS/Linux) · `ipconfig` (Windows).
+### Chat with a friend (same Wi-Fi)
+
+1. Run the server on one machine.
+2. Get its local IP: `ifconfig | grep inet` or `ipconfig`.
 3. Other device opens `http://<that-IP>:3000` and picks a name.
 
-## 🗂️ Where things live
+## Files
 
 | File | Job |
 |---|---|
-| `server.js` | Express + Socket.IO server, serves &amp; broadcasts |
+| `server.js` | Express + Socket.IO server, serves and broadcasts |
 | `public/index.html` | the chat screen |
-| `public/script.js` | the client (sends + renders) |
+| `public/script.js` | the client, sends and renders messages |
 | `public/style.css` | the looks |
 
-> Not encrypted — built for a trusted little network, not the open internet. Use the vibe, not the vault. 😉
+## Notes
 
----
+Not encrypted. Great for your house, not for the public internet. Use it for the vibe,
+not your passwords.
 
-<p align="center">made for the "brb, testing" energy · rewā, india</p>
+<p align="center">made for the "brb, testing something" energy</p>
