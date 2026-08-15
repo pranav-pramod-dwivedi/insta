@@ -6,51 +6,42 @@
 
 <p align="center">
   A tiny real-time chat that just works.<br/>
-  Don't let the name fool you. There are no feeds, no stories, no influencers.
+  No server, no cloud. Don't let the name fool you — there are no feeds or influencers.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/stack-Node%20%2B%20Express%20%2B%20Socket.io-833ab4" alt="stack" />
-  <img src="https://img.shields.io/badge/scope-small%20and%20quick-fd1d1d" alt="scope" />
+  <img src="https://img.shields.io/badge/stack-HTML%20%2B%20JS%20%2B%20PeerJS-833ab4" alt="stack" />
+  <img src="https://img.shields.io/badge/host-GitHub%20Pages-24292e" alt="host" />
 </p>
 
-Pick a name, open the page, type. Messages show up everywhere that's connected the
-moment you hit send. That's the whole app. It's meant to be that small.
+## Try it live
 
-## What it does
+https://pranav-pramod-dwivedi.github.io/insta/
 
-- A dropdown to set your name (Pranav or Naman).
-- Send a message and it broadcasts to every open tab and device.
-- Nothing gets saved. Reload the page and it's a fresh room.
+Pick a name, create a room, send the invite. Messages go straight between browsers —
+no server, no database, nothing stored anywhere.
 
-## Run it
+## How it works
+
+- Pick a name (Pranav, Naman, whoever).
+- **Create room** gives you a 5-letter code and an invite link.
+- Anyone with the link joins and every message shows up live for the room.
+- It runs **peer to peer** over PeerJS, so it lives for free on GitHub Pages like a plain static page.
+
+## Run it locally
 
 ```bash
-npm install
-npm start     # → http://localhost:3000
+python3 -m http.server 8000   # from this folder → http://localhost:8000
 ```
 
-To see it do its thing, open a **second tab**, pick the other name, and message
-yourself back and forth. I know, deeply sad. It works though.
-
-### Chat with a friend (same Wi-Fi)
-
-1. Run the server on one machine.
-2. Get its local IP: `ifconfig | grep inet` or `ipconfig`.
-3. Other device opens `http://<that-IP>:3000` and picks a name.
-
-## Files
-
-| File | Job |
-|---|---|
-| `server.js` | Express + Socket.IO server, serves and broadcasts |
-| `public/index.html` | the chat screen |
-| `public/script.js` | the client, sends and renders messages |
-| `public/style.css` | the looks |
+Same Wi-Fi? Open `http://<your-LAN-IP>:8000`. One creates a room, the rest join.
+No npm, no install.
 
 ## Notes
 
-Not encrypted. Great for your house, not for the public internet. Use it for the vibe,
-not your passwords.
+- It isn't Instagram. It's a one-trick chat demo and it knows it.
+- Chat rides PeerJS's free public broker. Broker naps, chat naps.
+- Not encrypted. Fine for friends, not for secrets.
+- Invite links auto-point at wherever the page is hosted, so they just work.
 
 <p align="center">made for the "brb, testing something" energy</p>

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>insta — a tiny peer-to-peer chat</title>
+<style>
+  :root { --grad: linear-gradient(90deg,#833ab4,#fd1d1d,#fcb045); }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#faf6ff; color:#3b2350; height:100vh; display:flex; flex-direction:column; }
+  header { background:var(--grad); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  header .name { font-weight:800; letter-spacing:.02em; }
+  header .status { font-size:13px; opacity:.9; }
+  main { flex:1; width:100%; max-width:760px; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+  .panel { background:#fff; border:1px solid #eee0fa; border-radius:14px; padding:16px; }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#a96fd6; margin-bottom:12px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  input[type="text"],select { flex:1; min-width:120px; padding:9px 10px; border:1px solid #e7d6f5; border-radius:8px; font:inherit; outline:none; }
+  input:focus,select:focus { border-color:#a96fd6; }
+  button { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:9px 14px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+  button:hover { filter:brightness(.94); }
+  button.ghost { background:#fff; color:#cf47d0; border:1px solid #e7d6f5; }
+  .chat { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:4px 2px; }
+  .msg { max-width:72%; padding:8px 12px; border-radius:14px; box-shadow:0 1px 2px rgba(59,35,80,.08); }
+  .msg.me { align-self:flex-end; background:var(--grad); color:#fff; border-bottom-right-radius:4px; }
+  .msg.them { align-self:flex-start; background:#fff; border:1px solid #eee0fa; border-bottom-left-radius:4px; }
+  .msg .who { font-size:11px; opacity:.7; display:block; margin-bottom:2px; }
+  .msg .when { font-size:10px; opacity:.5; display:block; text-align:right; margin-top:3px; }
+  .sys { align-self:center; color:#b48fd8; font-size:12px; font-style:italic; }
+  .inputbar { display:flex; gap:8px; }
+  .inputbar input { flex:1; }
+  .linkline { color:#6a4b85; font-size:13px; word-break:break-all; margin-top:10px; }
+  .linkline code { background:#f6effc; border-radius:6px; padding:2px 6px; color:#c13bd7; cursor:pointer; user-select:all; }
+</style>
+</head>
+<body>
+<header>
+  <div class="name">insta</div>
+  <div class="status" id="status">offline</div>
+</header>
+<main>
+  <section class="panel">
+    <h2>You</h2>
+    <div class="row">
+      <select id="who">
+        <option>Pranav</option>
+        <option>Naman</option>
+        <option>stranger</option>
+      </select>
+      <button id="createRoom">Create room</button>
+      <input type="text" id="roomCode" placeholder="…or paste a room code to join" />
+      <button class="ghost" id="joinRoom">Join</button>
+    </div>
+    <p class="linkline hidden" id="inviteLine">Invite: <code id="inviteCode"></code></p>
+  </section>
+
+  <section class="panel hidden" id="chatPanel">
+    <div class="chat" id="chatlog"></div>
+    <div class="inputbar">
+      <input type="text" id="msg" placeholder="Type a message…" />
+      <button id="send">Send</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var chatlog = $('chatlog'), msgInput = $('msg');
+  var messages = [], conns = [], peer = null, isHost = false, roomCode = null;
+
+  function status(t) { $('status').textContent = t; }
+  function add(m, text) {
+    messages.push(m);
+    var div = document.createElement('div');
+    if (m.sys) { div.className = 'sys'; div.textContent = text; }
+    else {
+      div.className = 'msg ' + (m.from === who() ? 'me' : 'them');
+      var whoEl = document.createElement('span'); whoEl.className = 'who'; whoEl.textContent = m.from;
+      div.appendChild(whoEl);
+      div.appendChild(document.createTextNode(m.text));
+      var when = document.createElement('span'); when.className = 'when'; when.textContent = m.time;
+      div.appendChild(when);
+    }
+    chatlog.appendChild(div);
+    chatlog.scrollTop = chatlog.scrollHeight;
+  }
+  function who() { return $('who').value; }
+  function now() { return new Date().toLocaleTimeString().slice(0,5); }
+  function broadcast(msg) { conns.forEach(function (c) { if (c.open) c.send(msg); }); }
+
+  function wireConn(c) {
+    c.on('open', function () {
+      conns.push(c);
+      status('connected to room ' + roomCode);
+      if (isHost && messages.length) c.send({ t: 'init', history: messages });
+      if (isHost) add({ sys: true }, 'someone joined');
+    });
+    c.on('data', function (d) {
+      d = (typeof d === 'string') ? JSON.parse(d) : d;
+      if (d.t === 'init') messages = d.history || [];
+      else if (d.t === 'chat') add(d.msg);
+    });
+    c.on('close', function () {
+      conns = conns.filter(function (x) { return x !== c; });
+      if (isHost) add({ sys: true }, 'someone left');
+    });
+    c.on('error', function () {});
+  }
+
+  var CODE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function randCode() { var s=''; for (var i=0;i<5;i++) s+=CODE[Math.floor(Math.random()*CODE.length)]; return s; }
+
+  function join(code) {
+    code = (code || '').trim().toUpperCase();
+    if (!code) return;
+    roomCode = code; isHost = false;
+    peer = new Peer();
+    peer.on('open', function () {
+      status('joining ' + roomCode + '…');
+      var c = peer.connect(code, { reliable: true });
+      wireConn(c); showChat();
+    });
+    peer.on('error', function () { status('room not found'); });
+  }
+
+  $('createRoom').onclick = function () {
+    roomCode = randCode(); isHost = true;
+    peer = new Peer(roomCode);
+    peer.on('open', function (id) {
+      status('hosting ' + id);
+      $('inviteLine').classList.remove('hidden');
+      $('inviteCode').textContent = location.href.split('?')[0] + '?r=' + id;
+      showChat();
+    });
+    peer.on('connection', wireConn);
+    peer.on('error', function (err) {
+      if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); }
+    });
+  };
+  $('joinRoom').onclick = function () { join($('roomCode').value); };
+
+  function showChat() { $('chatPanel').classList.remove('hidden'); msgInput.focus(); }
+  function send() {
+    var text = msgInput.value.trim();
+    if (!text) return;
+    var msg = { from: who(), text: text, time: now() };
+    add(msg);
+    broadcast({ t: 'chat', msg: msg });
+    msgInput.value = '';
+  }
+  $('send').onclick = send;
+  msgInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+
+  var q = new URLSearchParams(location.search);
+  if (q.get('r')) join(q.get('r'));
+})();
+</script>
+</body>
+</html>
