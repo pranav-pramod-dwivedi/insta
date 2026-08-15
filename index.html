@@ -3,100 +3,144 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>insta — a tiny peer-to-peer chat</title>
+<title>insta — peer to peer</title>
 <style>
-  :root { --grad: linear-gradient(90deg,#833ab4,#fd1d1d,#fcb045); }
+  :root {
+    --bg:#FBF7F1; --card:#FFFFFF; --line:#EAE2D4; --ink:#1D1B16;
+    --mut:#8A8171; --acc:#BF1E2E; --acc-ink:#FFF6F2;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#faf6ff; color:#3b2350; height:100vh; display:flex; flex-direction:column; }
-  header { background:var(--grad); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
-  header .name { font-weight:800; letter-spacing:.02em; }
-  header .status { font-size:13px; opacity:.9; }
-  main { flex:1; width:100%; max-width:760px; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
-  .panel { background:#fff; border:1px solid #eee0fa; border-radius:14px; padding:16px; }
-  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#a96fd6; margin-bottom:12px; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  input[type="text"],select { flex:1; min-width:120px; padding:9px 10px; border:1px solid #e7d6f5; border-radius:8px; font:inherit; outline:none; }
-  input:focus,select:focus { border-color:#a96fd6; }
-  button { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:9px 14px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
-  button:hover { filter:brightness(.94); }
-  button.ghost { background:#fff; color:#cf47d0; border:1px solid #e7d6f5; }
-  .chat { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:4px 2px; }
-  .msg { max-width:72%; padding:8px 12px; border-radius:14px; box-shadow:0 1px 2px rgba(59,35,80,.08); }
-  .msg.me { align-self:flex-end; background:var(--grad); color:#fff; border-bottom-right-radius:4px; }
-  .msg.them { align-self:flex-start; background:#fff; border:1px solid #eee0fa; border-bottom-left-radius:4px; }
-  .msg .who { font-size:11px; opacity:.7; display:block; margin-bottom:2px; }
-  .msg .when { font-size:10px; opacity:.5; display:block; text-align:right; margin-top:3px; }
-  .sys { align-self:center; color:#b48fd8; font-size:12px; font-style:italic; }
-  .inputbar { display:flex; gap:8px; }
-  .inputbar input { flex:1; }
-  .linkline { color:#6a4b85; font-size:13px; word-break:break-all; margin-top:10px; }
-  .linkline code { background:#f6effc; border-radius:6px; padding:2px 6px; color:#c13bd7; cursor:pointer; user-select:all; }
+  body { font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); height:100vh; display:flex; flex-direction:column; }
+  .bar { background:#1D1B16; color:var(--card); padding:13px 20px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .bar .brand { font-weight:800; letter-spacing:.02em; font-size:16px; }
+  .bar .state { font-size:12px; color:#C9C2B2; display:flex; align-items:center; gap:7px; }
+  .bar .state i { width:8px; height:8px; border-radius:50%; background:#5A564A; display:inline-block; }
+  .bar .state.live i { background:var(--acc); }
+  main { width:100%; max-width:640px; margin:0 auto; padding:30px 20px 24px; display:flex; flex-direction:column; gap:18px; overflow:hidden; flex:1; }
+  .landing .eyebrow { font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--acc); margin-bottom:12px; font-weight:600; }
+  .landing h1 { font-size:34px; line-height:1.06; font-weight:800; letter-spacing:-.01em; margin-bottom:10px; }
+  .landing h1 em { font-style:normal; color:var(--acc); }
+  .landing p.lede { color:var(--mut); margin-bottom:22px; font-size:15px; max-width:34em; }
+  .field { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  label { font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:.16em; }
+  select,input[type="text"] { font:inherit; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:4px; padding:10px 12px; }
+  select { flex:0 0 140px; }
+  input[type="text"] { flex:1; min-width:140px; }
+  input:focus,select:focus { outline:none; border-color:var(--acc); }
+  .actions { display:flex; gap:10px; }
+  button { font:inherit; font-weight:600; border:none; border-radius:4px; padding:11px 16px; cursor:pointer; }
+  .primary { background:var(--acc); color:var(--acc-ink); }
+  .primary:hover { filter:brightness(.95); }
+  .ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  .ghost:hover { border-color:var(--ink); }
+  .invite { margin-top:16px; border-top:1px dashed var(--line); padding-top:14px; }
+  .invite code { display:block; font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--card); border:1px dashed var(--line); border-radius:4px; padding:10px 12px; color:var(--acc); word-break:break-all; cursor:pointer; margin-top:8px; }
+  .invite code:hover { border-color:var(--acc); }
+  .hidden { display:none !important; }
+  .chat { flex:1; overflow-y:auto; padding:4px 2px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:74%; }
+  .msg.me { align-self:flex-end; }
+  .msg.them { align-self:flex-start; }
+  .msg .who { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin-bottom:3px; }
+  .msg .body { padding:9px 13px; border-radius:8px; box-shadow:0 1px 2px rgba(29,27,22,.06); }
+  .msg .body .text { word-wrap:break-word; }
+  .msg .time { font-size:10px; color:var(--mut); margin-top:3px; }
+  .msg.me .body { background:var(--ink); color:var(--card); }
+  .msg.me .body .time { color:rgba(255,255,255,.5); text-align:right; }
+  .msg.them .body { background:var(--card); border:1px solid var(--line); }
+  .sys { align-self:center; font-size:12px; color:var(--mut); font-style:italic; }
+  .compose { display:flex; gap:10px; margin-top:14px; }
+  .compose input { flex:1; }
+  .compose button { flex:0 0 auto; }
 </style>
 </head>
 <body>
-<header>
-  <div class="name">insta</div>
-  <div class="status" id="status">offline</div>
-</header>
-<main>
-  <section class="panel">
-    <h2>You</h2>
-    <div class="row">
-      <select id="who">
-        <option>Pranav</option>
-        <option>Naman</option>
-        <option>stranger</option>
-      </select>
-      <button id="createRoom">Create room</button>
-      <input type="text" id="roomCode" placeholder="…or paste a room code to join" />
-      <button class="ghost" id="joinRoom">Join</button>
-    </div>
-    <p class="linkline hidden" id="inviteLine">Invite: <code id="inviteCode"></code></p>
-  </section>
+  <div class="bar">
+    <span class="brand">insta</span>
+    <span class="state" id="state"><i></i><span id="status">offline</span></span>
+  </div>
 
-  <section class="panel hidden" id="chatPanel">
-    <div class="chat" id="chatlog"></div>
-    <div class="inputbar">
-      <input type="text" id="msg" placeholder="Type a message…" />
-      <button id="send">Send</button>
-    </div>
-  </section>
-</main>
+  <main>
+    <section class="landing" id="landing">
+      <div class="eyebrow">the anti-instagram</div>
+      <h1>A chat so small<br/>it needs <em>no server</em>.</h1>
+      <p class="lede">Messages hop straight between browsers over peer-to-peer. One person makes a room, everyone else joins by a link. That's the whole thing.</p>
+
+      <label>You are</label>
+      <div class="field">
+        <select id="who">
+          <option>Pranav</option>
+          <option>Naman</option>
+          <option>stranger</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="createRoom">Create room</button>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <input type="text" id="roomCode" placeholder="…or paste a room code to join" />
+        <button class="ghost" id="joinRoom">Join</button>
+      </div>
+
+      <div class="invite hidden" id="inviteLine">
+        <span>Invite anyone with this link (click to copy):</span>
+        <code id="inviteCode"></code>
+      </div>
+    </section>
+
+    <section class="chat hidden" id="chatlog"></section>
+
+    <section class="compose hidden" id="compose">
+      <input type="text" id="msg" placeholder="Type a message…" autocomplete="off" />
+      <button class="primary" id="send">Send</button>
+    </section>
+  </main>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var chatlog = $('chatlog'), msgInput = $('msg');
+  var log = $('chatlog'), input = $('msg');
   var messages = [], conns = [], peer = null, isHost = false, roomCode = null;
 
-  function status(t) { $('status').textContent = t; }
+  function setLive(live) { $('state').className = 'state' + (live ? ' live' : ''); }
+  function status(t, live) { $('status').textContent = t; if (live !== undefined) setLive(live); }
+  function who() { return $('who').value; }
+  function now() { return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+
   function add(m, text) {
     messages.push(m);
-    var div = document.createElement('div');
-    if (m.sys) { div.className = 'sys'; div.textContent = text; }
-    else {
+    if (m.sys) {
+      var s = document.createElement('div'); s.className = 'sys'; s.textContent = text;
+      log.appendChild(s);
+    } else {
+      var div = document.createElement('div');
       div.className = 'msg ' + (m.from === who() ? 'me' : 'them');
-      var whoEl = document.createElement('span'); whoEl.className = 'who'; whoEl.textContent = m.from;
-      div.appendChild(whoEl);
-      div.appendChild(document.createTextNode(m.text));
-      var when = document.createElement('span'); when.className = 'when'; when.textContent = m.time;
-      div.appendChild(when);
+      var whoEl = document.createElement('div'); whoEl.className = 'who'; whoEl.textContent = m.from;
+      var body = document.createElement('div'); body.className = 'body';
+      var txt = document.createElement('div'); txt.className = 'text'; txt.textContent = m.text;
+      var time = document.createElement('div'); time.className = 'time'; time.textContent = m.time;
+      body.appendChild(txt);
+      div.appendChild(whoEl); div.appendChild(body); div.appendChild(time);
+      log.appendChild(div);
     }
-    chatlog.appendChild(div);
-    chatlog.scrollTop = chatlog.scrollHeight;
+    log.scrollTop = log.scrollHeight;
   }
-  function who() { return $('who').value; }
-  function now() { return new Date().toLocaleTimeString().slice(0,5); }
+  function showChat() {
+    $('landing').classList.add('hidden');
+    $('compose').classList.remove('hidden');
+    input.focus();
+  }
   function broadcast(msg) { conns.forEach(function (c) { if (c.open) c.send(msg); }); }
 
   function wireConn(c) {
     c.on('open', function () {
       conns.push(c);
-      status('connected to room ' + roomCode);
-      if (isHost && messages.length) c.send({ t: 'init', history: messages });
-      if (isHost) add({ sys: true }, 'someone joined');
+      status('room ' + roomCode, true);
+      if (isHost) { if (messages.length) c.send({ t: 'init', history: messages }); add({ sys: true }, 'someone joined'); }
     });
     c.on('data', function (d) {
       d = (typeof d === 'string') ? JSON.parse(d) : d;
@@ -112,17 +156,12 @@
 
   var CODE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function randCode() { var s=''; for (var i=0;i<5;i++) s+=CODE[Math.floor(Math.random()*CODE.length)]; return s; }
-
   function join(code) {
     code = (code || '').trim().toUpperCase();
     if (!code) return;
     roomCode = code; isHost = false;
     peer = new Peer();
-    peer.on('open', function () {
-      status('joining ' + roomCode + '…');
-      var c = peer.connect(code, { reliable: true });
-      wireConn(c); showChat();
-    });
+    peer.on('open', function () { status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
     peer.on('error', function () { status('room not found'); });
   }
 
@@ -130,29 +169,27 @@
     roomCode = randCode(); isHost = true;
     peer = new Peer(roomCode);
     peer.on('open', function (id) {
-      status('hosting ' + id);
+      status('hosting ' + id, true);
       $('inviteLine').classList.remove('hidden');
       $('inviteCode').textContent = location.href.split('?')[0] + '?r=' + id;
       showChat();
     });
     peer.on('connection', wireConn);
-    peer.on('error', function (err) {
-      if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); }
-    });
+    peer.on('error', function (err) { if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); } });
   };
+  $('inviteCode').onclick = function () { navigator.clipboard && navigator.clipboard.writeText(this.textContent); };
   $('joinRoom').onclick = function () { join($('roomCode').value); };
 
-  function showChat() { $('chatPanel').classList.remove('hidden'); msgInput.focus(); }
   function send() {
-    var text = msgInput.value.trim();
+    var text = input.value.trim();
     if (!text) return;
     var msg = { from: who(), text: text, time: now() };
     add(msg);
     broadcast({ t: 'chat', msg: msg });
-    msgInput.value = '';
+    input.value = '';
   }
   $('send').onclick = send;
-  msgInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
 
   var q = new URLSearchParams(location.search);
   if (q.get('r')) join(q.get('r'));
