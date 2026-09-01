@@ -114,7 +114,7 @@
   function add(m, text) {
     messages.push(m);
     if (m.sys) {
-      var s = document.createElement('div'); s.className = 'sys'; s.textContent = text;
+      var s = document.createElement('div'); s.className = 'sys'; s.textContent = text || m.text || '';
       log.appendChild(s);
     } else {
       var div = document.createElement('div');
@@ -140,16 +140,26 @@
     c.on('open', function () {
       conns.push(c);
       status('room ' + roomCode, true);
-      if (isHost) { if (messages.length) c.send({ t: 'init', history: messages }); add({ sys: true }, 'someone joined'); }
+      if (isHost) {
+        if (messages.length) c.send({ t: 'init', history: messages });
+        add({ sys: true, text: 'someone joined' }, 'someone joined');
+      }
     });
     c.on('data', function (d) {
       d = (typeof d === 'string') ? JSON.parse(d) : d;
-      if (d.t === 'init') messages = d.history || [];
+      if (d.t === 'init') {
+        messages = [];
+        log.innerHTML = '';
+        (d.history || []).forEach(function (msg) {
+          if (msg.sys) add(msg, msg.text || 'system message');
+          else add(msg);
+        });
+      }
       else if (d.t === 'chat') add(d.msg);
     });
     c.on('close', function () {
       conns = conns.filter(function (x) { return x !== c; });
-      if (isHost) add({ sys: true }, 'someone left');
+      if (isHost) add({ sys: true, text: 'someone left' }, 'someone left');
     });
     c.on('error', function () {});
   }
@@ -177,8 +187,39 @@
     peer.on('connection', wireConn);
     peer.on('error', function (err) { if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); } });
   };
-  $('inviteCode').onclick = function () { navigator.clipboard && navigator.clipboard.writeText(this.textContent); };
+
+  function copyToClipboard(text, elem) {
+    var orig = elem.textContent;
+    function feedback() {
+      elem.textContent = 'Copied to clipboard!';
+      setTimeout(function () { elem.textContent = orig; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(feedback).catch(function () {
+        fallbackCopy(text);
+        feedback();
+      });
+    } else {
+      fallbackCopy(text);
+      feedback();
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  $('inviteCode').onclick = function () { copyToClipboard(this.textContent, this); };
   $('joinRoom').onclick = function () { join($('roomCode').value); };
+  $('roomCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') join($('roomCode').value); });
 
   function send() {
     var text = input.value.trim();
