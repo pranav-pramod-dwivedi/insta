@@ -90,6 +90,11 @@
       </div>
     </section>
 
+    <div class="room-banner hidden" id="roomBanner" style="background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; font-size:13px;">
+      <span>Room: <strong id="activeRoomCode" style="color:var(--acc); font-family:monospace;"></strong></span>
+      <button class="ghost" id="copyLinkBtn" style="padding:4px 10px; font-size:12px;">Copy invite link</button>
+    </div>
+
     <section class="chat hidden" id="chatlog"></section>
 
     <section class="compose hidden" id="compose">
@@ -131,6 +136,9 @@
   }
   function showChat() {
     $('landing').classList.add('hidden');
+    $('roomBanner').classList.remove('hidden');
+    $('activeRoomCode').textContent = roomCode;
+    $('chatlog').classList.remove('hidden');
     $('compose').classList.remove('hidden');
     input.focus();
   }
@@ -218,6 +226,12 @@
   }
 
   $('inviteCode').onclick = function () { copyToClipboard(this.textContent, this); };
+  if ($('copyLinkBtn')) {
+    $('copyLinkBtn').onclick = function () {
+      var url = location.href.split('?')[0] + '?r=' + roomCode;
+      copyToClipboard(url, this);
+    };
+  }
   $('joinRoom').onclick = function () { join($('roomCode').value); };
   $('roomCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') join($('roomCode').value); });
 
