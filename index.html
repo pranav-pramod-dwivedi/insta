@@ -66,12 +66,14 @@
       <h1>A chat so small<br/>it needs <em>no server</em>.</h1>
       <p class="lede">Messages hop straight between browsers over peer-to-peer. One person makes a room, everyone else joins by a link. That's the whole thing.</p>
 
-      <label>You are</label>
+      <label for="customName">Your display name</label>
       <div class="field">
-        <select id="who">
-          <option>Pranav</option>
-          <option>Naman</option>
-          <option>stranger</option>
+        <input type="text" id="customName" placeholder="Enter your name" maxlength="24" />
+        <select id="who" aria-label="Preset names">
+          <option value="">Presets...</option>
+          <option value="Pranav">Pranav</option>
+          <option value="Naman">Naman</option>
+          <option value="stranger">stranger</option>
         </select>
       </div>
 
@@ -80,7 +82,7 @@
       </div>
 
       <div class="field" style="margin-top:14px">
-        <input type="text" id="roomCode" placeholder="…or paste a room code to join" />
+        <input type="text" id="roomCode" placeholder="…or paste a room code to join" aria-label="Room code" />
         <button class="ghost" id="joinRoom">Join</button>
       </div>
 
@@ -92,7 +94,10 @@
 
     <div class="room-banner hidden" id="roomBanner" style="background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; font-size:13px;">
       <span>Room: <strong id="activeRoomCode" style="color:var(--acc); font-family:monospace;"></strong></span>
-      <button class="ghost" id="copyLinkBtn" style="padding:4px 10px; font-size:12px;">Copy invite link</button>
+      <div style="display:flex; gap:8px;">
+        <button class="ghost" id="copyLinkBtn" style="padding:4px 10px; font-size:12px;">Copy invite link</button>
+        <button class="ghost" id="leaveBtn" style="padding:4px 10px; font-size:12px; color:var(--mut);">Leave</button>
+      </div>
     </div>
 
     <section class="chat hidden" id="chatlog"></section>
@@ -108,16 +113,46 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var log = $('chatlog'), input = $('msg');
+  var log = $('chatlog'), input = $('msg'), customNameInput = $('customName'), whoSelect = $('who');
   var messages = [], conns = [], peer = null, isHost = false, roomCode = null;
+
+  try {
+    var saved = localStorage.getItem('insta_user');
+    if (saved && customNameInput) customNameInput.value = saved;
+  } catch (e) {}
+
+  if (whoSelect) {
+    whoSelect.onchange = function () {
+      if (whoSelect.value && customNameInput) {
+        customNameInput.value = whoSelect.value;
+        try { localStorage.setItem('insta_user', whoSelect.value); } catch (e) {}
+      }
+    };
+  }
+
+  if (customNameInput) {
+    customNameInput.oninput = function () {
+      try { localStorage.setItem('insta_user', customNameInput.value.trim()); } catch (e) {}
+    };
+    customNameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        if ($('roomCode').value.trim()) $('joinRoom').click();
+        else $('createRoom').click();
+      }
+    });
+  }
 
   function setLive(live) { $('state').className = 'state' + (live ? ' live' : ''); }
   function status(t, live) { $('status').textContent = t; if (live !== undefined) setLive(live); }
-  function who() { return $('who').value; }
+  function who() {
+    var n = customNameInput ? customNameInput.value.trim() : '';
+    return n || (whoSelect ? whoSelect.value : '') || 'stranger';
+  }
   function now() { return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
   function add(m, text) {
     messages.push(m);
+    var isNearBottom = (log.scrollHeight - log.scrollTop - log.clientHeight) < 80;
     if (m.sys) {
       var s = document.createElement('div'); s.className = 'sys'; s.textContent = text || m.text || '';
       log.appendChild(s);
@@ -132,8 +167,30 @@
       div.appendChild(whoEl); div.appendChild(body); div.appendChild(time);
       log.appendChild(div);
     }
-    log.scrollTop = log.scrollHeight;
+    if (isNearBottom || m.from === who()) {
+      log.scrollTop = log.scrollHeight;
+    }
   }
+
+  function leaveRoom() {
+    conns.forEach(function (c) { try { c.close(); } catch (e) {} });
+    conns = [];
+    if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+    roomCode = null;
+    isHost = false;
+    messages = [];
+    log.innerHTML = '';
+    $('landing').classList.remove('hidden');
+    $('roomBanner').classList.add('hidden');
+    $('chatlog').classList.add('hidden');
+    $('compose').classList.add('hidden');
+    status('offline', false);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }
+  if ($('leaveBtn')) $('leaveBtn').onclick = leaveRoom;
+
   function showChat() {
     $('landing').classList.add('hidden');
     $('roomBanner').classList.remove('hidden');
@@ -155,6 +212,7 @@
     });
     c.on('data', function (d) {
       d = (typeof d === 'string') ? JSON.parse(d) : d;
+      if (!d || !d.t) return;
       if (d.t === 'init') {
         messages = [];
         log.innerHTML = '';
@@ -168,6 +226,7 @@
     c.on('close', function () {
       conns = conns.filter(function (x) { return x !== c; });
       if (isHost) add({ sys: true, text: 'someone left' }, 'someone left');
+      if (!isHost && conns.length === 0) status('disconnected', false);
     });
     c.on('error', function () {});
   }
@@ -177,10 +236,11 @@
   function join(code) {
     code = (code || '').trim().toUpperCase();
     if (!code) return;
+    if (peer) { try { peer.destroy(); } catch (e) {} }
     roomCode = code; isHost = false;
     peer = new Peer();
     peer.on('open', function () { status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
-    peer.on('error', function () { status('room not found'); });
+    peer.on('error', function () { status('room not found', false); });
   }
 
   $('createRoom').onclick = function () {
@@ -214,15 +274,17 @@
   }
 
   function fallbackCopy(text) {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
-    document.body.removeChild(ta);
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) {}
   }
 
   $('inviteCode').onclick = function () { copyToClipboard(this.textContent, this); };
@@ -242,6 +304,7 @@
     add(msg);
     broadcast({ t: 'chat', msg: msg });
     input.value = '';
+    input.focus();
   }
   $('send').onclick = send;
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
