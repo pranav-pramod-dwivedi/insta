@@ -87,8 +87,8 @@
       </div>
 
       <div class="invite hidden" id="inviteLine">
-        <span>Invite anyone with this link (click to copy):</span>
-        <code id="inviteCode"></code>
+        <span>Invite anyone with this link (click or press Enter to copy):</span>
+        <code id="inviteCode" tabindex="0" role="button" aria-label="Copy invite link"></code>
       </div>
     </section>
 
@@ -288,6 +288,12 @@
   }
 
   $('inviteCode').onclick = function () { copyToClipboard(this.textContent, this); };
+  $('inviteCode').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      copyToClipboard(this.textContent, this);
+    }
+  });
   if ($('copyLinkBtn')) {
     $('copyLinkBtn').onclick = function () {
       var url = location.href.split('?')[0] + '?r=' + roomCode;
@@ -310,7 +316,11 @@
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
 
   var q = new URLSearchParams(location.search);
-  if (q.get('r')) join(q.get('r'));
+  var autoRoom = (q.get('r') || q.get('room') || '').trim().toUpperCase();
+  if (autoRoom) {
+    if ($('roomCode')) $('roomCode').value = autoRoom;
+    join(autoRoom);
+  }
 })();
 </script>
 </body>
