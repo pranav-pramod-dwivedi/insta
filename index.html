@@ -20,7 +20,7 @@
   .landing .eyebrow { font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--acc); margin-bottom:12px; font-weight:600; }
   .landing h1 { font-size:34px; line-height:1.06; font-weight:800; letter-spacing:-.01em; margin-bottom:10px; }
   .landing h1 em { font-style:normal; color:var(--acc); }
-  .landing p.lede { color:var(--mut); margin-bottom:22px; font-size:15px; max-width:34em; }
+  .landing p.led { color:var(--mut); margin-bottom:22px; font-size:15px; max-width:34em; }
   .field { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
   label { font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:.16em; }
   select,input[type="text"] { font:inherit; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:4px; padding:10px 12px; }
@@ -64,7 +64,7 @@
     <section class="landing" id="landing">
       <div class="eyebrow">the anti-instagram</div>
       <h1>A chat so small<br/>it needs <em>no server</em>.</h1>
-      <p class="lede">Messages hop straight between browsers over peer-to-peer. One person makes a room, everyone else joins by a link. That's the whole thing.</p>
+      <p class="led">Messages hop straight between browsers over peer-to-peer. One person makes a room, everyone else joins by a link. That's the whole thing.</p>
 
       <label for="customName">Your display name</label>
       <div class="field">
@@ -239,7 +239,7 @@
     c.on('error', function () {});
   }
 
-  var CODE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  var CODE = 'ABCDEFGHIJKMNPQRSTUVWXYZ23456789';
   function randCode() { var s=''; for (var i=0;i<5;i++) s+=CODE[Math.floor(Math.random()*CODE.length)]; return s; }
   function join(code) {
     code = (code || '').trim().toUpperCase();
@@ -248,7 +248,8 @@
     if (!peerReady()) return;
     roomCode = code; isHost = false;
     peer = new Peer();
-    peer.on('open', function () { status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
+    peer.on('open', function () {
+      status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
     peer.on('error', function (err) {
       if (err && err.type === 'peer-unavailable') status('room not found', false);
       else status('connection error', false);
@@ -259,14 +260,14 @@
     if (!peerReady()) return;
     roomCode = randCode(); isHost = true;
     peer = new Peer(roomCode);
-    peer.on('open', function (id) {
+      peer.on('open', function (id) {
       status('hosting ' + id, true);
       $('inviteLine').classList.remove('hidden');
       $('inviteCode').textContent = location.href.split('?')[0] + '?r=' + id;
       showChat();
     });
-    peer.on('connection', wireConn);
-    peer.on('error', function (err) { if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); } });
+      peer.on('connection', wireConn);
+      peer.on('error', function (err) { if (err.type === 'unavailable-id') { roomCode = randCode(); peer.destroy(); $('createRoom').onclick(); } });
   };
 
   function copyToClipboard(text, elem) {
