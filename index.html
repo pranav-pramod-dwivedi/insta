@@ -55,6 +55,7 @@
   .msg.me .body .time { color:rgba(255,255,255,.5); text-align:right; }
   .msg.them .body { background:var(--card); border:1px solid var(--line); }
   .sys { align-self:center; font-size:12px; color:var(--mut); font-style:italic; }
+  .empty-hint { margin:auto 0; align-self:center; text-align:center; color:var(--mut); font-size:13px; max-width:24em; padding:16px; line-height:1.5; }
   .compose { display:flex; gap:10px; margin-top:14px; }
   .compose input { flex:1; }
   .compose button { flex:0 0 auto; }
@@ -164,6 +165,19 @@
     return true;
   }
 
+  function syncEmpty() {
+    var hasContent = log.querySelector('.msg, .sys');
+    var e = $('emptyHint');
+    if (hasContent && e) e.remove();
+    else if (!hasContent && !e) {
+      e = document.createElement('div');
+      e.className = 'empty-hint';
+      e.id = 'emptyHint';
+      e.textContent = "It's quiet in here — say hi, or share the invite link.";
+      log.appendChild(e);
+    }
+  }
+
   function add(m, text) {
     messages.push(m);
     var isNearBottom = (log.scrollHeight - log.scrollTop - log.clientHeight) < 80;
@@ -185,6 +199,7 @@
     if (isNearBottom || (m.sender && peer && m.sender === peer.id) || m.from === who()) {
       log.scrollTop = log.scrollHeight;
     }
+    syncEmpty();
   }
 
   function leaveRoom() {
@@ -212,6 +227,7 @@
     $('activeRoomCode').textContent = roomCode;
     $('chatlog').classList.remove('hidden');
     $('compose').classList.remove('hidden');
+    syncEmpty();
     input.focus();
   }
   function broadcast(msg) { conns.forEach(function (c) { if (c.open) c.send(msg); }); }
@@ -235,6 +251,7 @@
           if (msg.sys) add(msg, msg.text || 'system message');
           else add(msg);
         });
+        syncEmpty();
       }
       else if (d.t === 'chat') {
         add(d.msg);
