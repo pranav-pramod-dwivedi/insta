@@ -275,10 +275,13 @@
   function join(code) {
     code = (code || '').trim();
     if (!code) return;
-    if (code.indexOf('?r=') !== -1) code = code.split('?r=')[1].split('&')[0];
-    else if (code.indexOf('?room=') !== -1) code = code.split('?room=')[1].split('&')[0];
-    else if (code.indexOf('?R=') !== -1) code = code.split('?R=')[1].split('&')[0];
-    else if (code.indexOf('?ROOM=') !== -1) code = code.split('?ROOM=')[1].split('&')[0];
+    if (code.indexOf('?') !== -1 || code.indexOf('#') !== -1) {
+      try {
+        var u = new URL(code, location.href);
+        code = u.searchParams.get('r') || u.searchParams.get('room') ||
+               u.searchParams.get('R') || u.searchParams.get('ROOM') || '';
+      } catch (e) {}
+    }
     code = code.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     if (!code) return;
     if (peer) { try { peer.destroy(); } catch (e) {} }
