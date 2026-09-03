@@ -170,8 +170,9 @@
       var s = document.createElement('div'); s.className = 'sys'; s.textContent = text || m.text || '';
       log.appendChild(s);
     } else {
+      var isMe = (m.sender && peer && m.sender === peer.id) || (!m.sender && m.from === who());
       var div = document.createElement('div');
-      div.className = 'msg ' + (m.from === who() ? 'me' : 'them');
+      div.className = 'msg ' + (isMe ? 'me' : 'them');
       var whoEl = document.createElement('div'); whoEl.className = 'who'; whoEl.textContent = m.from;
       var body = document.createElement('div'); body.className = 'body';
       var txt = document.createElement('div'); txt.className = 'text'; txt.textContent = m.text;
@@ -180,7 +181,7 @@
       div.appendChild(whoEl); div.appendChild(body); div.appendChild(time);
       log.appendChild(div);
     }
-    if (isNearBottom || m.from === who()) {
+    if (isNearBottom || (m.sender && peer && m.sender === peer.id) || m.from === who()) {
       log.scrollTop = log.scrollHeight;
     }
   }
@@ -234,7 +235,14 @@
           else add(msg);
         });
       }
-      else if (d.t === 'chat') add(d.msg);
+      else if (d.t === 'chat') {
+        add(d.msg);
+        if (isHost) {
+          conns.forEach(function (conn) {
+            if (conn !== c && conn.open) conn.send(d);
+          });
+        }
+      }
     });
     c.on('close', function () {
       conns = conns.filter(function (x) { return x !== c; });
@@ -325,7 +333,7 @@
   function send() {
     var text = input.value.trim();
     if (!text) return;
-    var msg = { from: who(), text: text, time: now() };
+    var msg = { from: who(), text: text, time: now(), sender: peer ? peer.id : null };
     add(msg);
     broadcast({ t: 'chat', msg: msg });
     input.value = '';
