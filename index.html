@@ -211,7 +211,7 @@
       }
     });
     c.on('data', function (d) {
-      d = (typeof d === 'string') ? JSON.parse(d) : d;
+      try { d = (typeof d === 'string') ? JSON.parse(d) : d; } catch (e) { return; }
       if (!d || !d.t) return;
       if (d.t === 'init') {
         messages = [];
@@ -240,7 +240,10 @@
     roomCode = code; isHost = false;
     peer = new Peer();
     peer.on('open', function () { status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
-    peer.on('error', function () { status('room not found', false); });
+    peer.on('error', function (err) {
+      if (err && err.type === 'peer-unavailable') status('room not found', false);
+      else status('connection error', false);
+    });
   }
 
   $('createRoom').onclick = function () {
