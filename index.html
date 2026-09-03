@@ -150,6 +150,14 @@
   }
   function now() { return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
+  function peerReady() {
+    if (typeof Peer === 'undefined') {
+      status('chat library failed to load — refresh or check your connection', false);
+      return false;
+    }
+    return true;
+  }
+
   function add(m, text) {
     messages.push(m);
     var isNearBottom = (log.scrollHeight - log.scrollTop - log.clientHeight) < 80;
@@ -237,6 +245,7 @@
     code = (code || '').trim().toUpperCase();
     if (!code) return;
     if (peer) { try { peer.destroy(); } catch (e) {} }
+    if (!peerReady()) return;
     roomCode = code; isHost = false;
     peer = new Peer();
     peer.on('open', function () { status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
@@ -247,6 +256,7 @@
   }
 
   $('createRoom').onclick = function () {
+    if (!peerReady()) return;
     roomCode = randCode(); isHost = true;
     peer = new Peer(roomCode);
     peer.on('open', function (id) {
