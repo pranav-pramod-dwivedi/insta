@@ -5,8 +5,419 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="description" content="A tiny peer-to-peer chat that just works — no server, no cloud. Create a room, share the link, and messages go straight between browsers." />
 <meta name="theme-color" content="#1D1B16" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%3232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%231D1B16%22%2F%3E%3Cpath%20d%3D%22M16%207C10.5%207%206%2010.4%206%2014.6c0%202.3%201.3%204.4%203.4%205.8L8%2025l5.4-2.6c.8.2%201.7.3%202.6.3%205.5%200%2010-3.4%2010-7.6S21.5%207%2016%207z%22%20fill%3D%22%23BF1E2E%22%2F%3E%3C%2Fsvg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%231D1B16%22%2F%3E%3Cpath%20d%3D%22M16%207C10.5%207%206%2010.4%206%2014.6c0%202.3%201.3%204.4%203.4%205.8L8%2025l5.4-2.6c.8.2%201.7.3%202.6.3%205.5%200%2010-3.4%2010-7.6S21.5%207%2016%207z%22%20fill%3D%22%23BF1E2E%22%2F%3E%3C%2Fsvg%3E" />
 <meta property="og:title" content="insta — peer to peer" />
 <meta property="og:description" content="A tiny peer-to-peer chat that just works — no server, no cloud." />
 <meta property="og:type" content="website" />
 <title>insta — peer to peer</title>
+<style>
+  :root {
+    --bg:#FBF7F1; --card:#FFFFFF; --line:#EAE2D4; --ink:#1D1B16;
+    --mut:#8A8171; --acc:#BF1E2E; --acc-ink:#FFF6F2;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); height:100vh; display:flex; flex-direction:column; }
+  .bar { background:#1D1B16; color:var(--card); padding:13px 20px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .bar .brand { font-weight:800; letter-spacing:.02em; font-size:16px; }
+  .bar .state { font-size:12px; color:#C9C2B2; display:flex; align-items:center; gap:7px; }
+  .bar .state i { width:8px; height:8px; border-radius:50%; background:#5A564A; display:inline-block; }
+  .bar .state.live i { background:var(--acc); }
+  main { width:100%; max-width:640px; margin:0 auto; padding:30px 20px 24px; display:flex; flex-direction:column; gap:18px; overflow:hidden; flex:1; }
+  .landing .eyebrow { font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--acc); margin-bottom:12px; font-weight:600; }
+  .landing h1 { font-size:34px; line-height:1.06; font-weight:800; letter-spacing:-.01em; margin-bottom:10px; }
+  .landing h1 em { font-style:normal; color:var(--acc); }
+  .landing p.led { color:var(--mut); margin-bottom:22px; font-size:15px; max-width:34em; }
+  .field { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  label { font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:.16em; }
+  select,input[type="text"] { font:inherit; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:4px; padding:10px 12px; }
+  select { flex:0 0 140px; }
+  input[type="text"] { flex:1; min-width:140px; }
+  input:focus,select:focus { outline:none; border-color:var(--acc); }
+  input:focus-visible,select:focus-visible,button:focus-visible,.invite code:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .actions { display:flex; gap:10px; }
+  button { font:inherit; font-weight:600; border:none; border-radius:4px; padding:11px 16px; cursor:pointer; }
+  .primary { background:var(--acc); color:var(--acc-ink); }
+  .primary:hover { filter:brightness(.95); }
+  .ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  .ghost:hover { border-color:var(--ink); }
+  .invite { margin-top:16px; border-top:1px dashed var(--line); padding-top:14px; }
+  .invite code { display:block; font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--card); border:1px dashed var(--line); border-radius:4px; padding:10px 12px; color:var(--acc); word-break:break-all; cursor:pointer; margin-top:8px; }
+  .invite code:hover { border-color:var(--acc); }
+  .hidden { display:none !important; }
+  .chat { flex:1; overflow-y:auto; padding:4px 2px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:74%; }
+  .msg.me { align-self:flex-end; }
+  .msg.them { align-self:flex-start; }
+  .msg .who { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin-bottom:3px; }
+  .msg .body { padding:9px 13px; border-radius:8px; box-shadow:0 1px 2px rgba(29,27,22,.06); }
+  .msg .body .text { word-wrap:break-word; }
+  .msg .time { font-size:10px; color:var(--mut); margin-top:3px; }
+  .msg.me .body { background:var(--ink); color:var(--card); }
+  .msg.me .body .time { color:rgba(255,255,255,.5); text-align:right; }
+  .msg.them .body { background:var(--card); border:1px solid var(--line); }
+  .sys { align-self:center; font-size:12px; color:var(--mut); font-style:italic; }
+  .empty-hint { margin:auto 0; align-self:center; text-align:center; color:var(--mut); font-size:13px; max-width:24em; padding:16px; line-height:1.5; }
+  .compose { display:flex; gap:10px; margin-top:14px; }
+  .compose input { flex:1; }
+  .compose button { flex:0 0 auto; }
+
+  /* Dark mode: respects the user's OS-level preference. No JS changes needed. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#16140F; --card:#221F18; --line:#3A3428; --ink:#F4EFEE;
+      --mut:#9A9180; --acc:#E5484D; --acc-ink:#FFF6F2;
+    }
+    .bar { background:#0E0D0A; }
+    .bar .state { color:#8A8270; }
+    .bar .state i { background:#4A463A; }
+    .msg.them .body { background:var(--card); border-color:var(--line); }
+    .invite code { background:var(--card); }
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <span class="brand">insta</span>
+    <span class="state" id="state" role="status" aria-live="polite"><i aria-hidden="true"></i><span id="status">offline</span></span>
+  </div>
+
+  <main>
+    <section class="landing" id="landing">
+      <div class="eyebrow">the anti-instagram</div>
+      <h1>A chat so small<br/>it needs <em>no server</em>.</h1>
+      <p class="led">Messages hop straight between browsers over peer-to-peer. One person makes a room, everyone else joins by a link. That's the whole thing.</p>
+
+      <label for="customName">Your display name</label>
+      <div class="field">
+        <input type="text" id="customName" placeholder="Enter your name" maxlength="24" />
+        <select id="who" aria-label="Preset names">
+          <option value="">Presets...</option>
+          <option value="Pranav">Pranav</option>
+          <option value="Naman">Naman</option>
+          <option value="stranger">stranger</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="createRoom">Create room</button>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <input type="text" id="roomCode" placeholder="…or paste a room code to join" aria-label="Room code" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+        <button class="ghost" id="joinRoom">Join</button>
+      </div>
+
+      <div class="invite hidden" id="inviteLine">
+        <span>Invite anyone with this link (click or press Enter to copy):</span>
+        <code id="inviteCode" tabindex="0" role="button" aria-label="Copy invite link"></code>
+      </div>
+    </section>
+
+    <div class="room-banner hidden" id="roomBanner" style="background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; font-size:13px;">
+      <span>Room: <strong id="activeRoomCode" style="color:var(--acc); font-family:monospace;"></strong></span>
+      <div style="display:flex; gap:8px;">
+        <button class="ghost" id="copyLinkBtn" style="padding:4px 10px; font-size:12px;">Copy invite link</button>
+        <button class="ghost" id="leaveBtn" style="padding:4px 10px; font-size:12px; color:var(--mut);">Leave</button>
+      </div>
+    </div>
+
+    <section class="chat hidden" id="chatlog" role="log" aria-live="polite" aria-label="Chat messages"></section>
+
+    <section class="compose hidden" id="compose">
+      <input type="text" id="msg" placeholder="Type a message…" autocomplete="off" maxlength="2000" aria-label="Type a message" />
+      <button class="primary" id="send" aria-label="Send message">Send</button>
+    </section>
+  </main>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var log = $('chatlog'), input = $('msg'), customNameInput = $('customName'), whoSelect = $('who');
+  var messages = [], conns = [], peer = null, isHost = false, roomCode = null;
+
+  try {
+    var saved = localStorage.getItem('insta_user');
+    if (saved && customNameInput) customNameInput.value = saved;
+  } catch (e) {}
+
+  if (whoSelect) {
+    whoSelect.onchange = function () {
+      if (whoSelect.value && customNameInput) {
+        customNameInput.value = whoSelect.value;
+        try { localStorage.setItem('insta_user', whoSelect.value); } catch (e) {}
+      }
+    };
+  }
+
+  if (customNameInput) {
+    customNameInput.oninput = function () {
+      try { localStorage.setItem('insta_user', customNameInput.value.trim()); } catch (e) {}
+    };
+    customNameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        if ($('roomCode').value.trim()) $('joinRoom').click();
+        else $('createRoom').click();
+      }
+    });
+  }
+
+  function setLive(live) { $('state').className = 'state' + (live ? ' live' : ''); }
+  function status(t, live) { $('status').textContent = t; if (live !== undefined) setLive(live); }
+  function who() {
+    var n = customNameInput ? customNameInput.value.trim() : '';
+    return n || (whoSelect ? whoSelect.value : '') || 'stranger';
+  }
+  function now() { return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+
+  function peerReady() {
+    if (typeof Peer === 'undefined') {
+      status('chat library failed to load — refresh or check your connection', false);
+      return false;
+    }
+    return true;
+  }
+
+  function syncEmpty() {
+    var hasContent = log.querySelector('.msg, .sys');
+    var e = $('emptyHint');
+    if (hasContent && e) e.remove();
+    else if (!hasContent && !e) {
+      e = document.createElement('div');
+      e.className = 'empty-hint';
+      e.id = 'emptyHint';
+      e.textContent = "It's quiet in here — say hi, or share the invite link.";
+      log.appendChild(e);
+    }
+  }
+
+  function add(m, text) {
+    messages.push(m);
+    var isNearBottom = (log.scrollHeight - log.scrollTop - log.clientHeight) < 80;
+    if (m.sys) {
+      var s = document.createElement('div'); s.className = 'sys'; s.textContent = text || m.text || '';
+      log.appendChild(s);
+    } else {
+      var isMe = (m.sender && peer && m.sender === peer.id) || (!m.sender && m.from === who());
+      var div = document.createElement('div');
+      div.className = 'msg ' + (isMe ? 'me' : 'them');
+      var whoEl = document.createElement('div'); whoEl.className = 'who'; whoEl.textContent = m.from;
+      var body = document.createElement('div'); body.className = 'body';
+      var txt = document.createElement('div'); txt.className = 'text'; txt.textContent = m.text;
+      var time = document.createElement('div'); time.className = 'time'; time.textContent = m.time;
+      body.appendChild(txt);
+      div.appendChild(whoEl); div.appendChild(body); div.appendChild(time);
+      log.appendChild(div);
+    }
+    if (isNearBottom || (m.sender && peer && m.sender === peer.id) || m.from === who()) {
+      log.scrollTop = log.scrollHeight;
+    }
+    syncEmpty();
+  }
+
+  function leaveRoom() {
+    broadcast({ t: 'bye', name: who() });
+    conns.forEach(function (c) { try { c.close(); } catch (e) {} });
+    conns = [];
+    if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+    roomCode = null;
+    isHost = false;
+    messages = [];
+    log.innerHTML = '';
+    $('landing').classList.remove('hidden');
+    $('roomBanner').classList.add('hidden');
+    $('chatlog').classList.add('hidden');
+    $('compose').classList.add('hidden');
+    status('offline', false);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }
+  if ($('leaveBtn')) $('leaveBtn').onclick = leaveRoom;
+
+  function showChat() {
+    $('landing').classList.add('hidden');
+    $('roomBanner').classList.remove('hidden');
+    $('activeRoomCode').textContent = roomCode;
+    $('chatlog').classList.remove('hidden');
+    $('compose').classList.remove('hidden');
+    syncEmpty();
+    input.focus();
+  }
+  function broadcast(msg) { conns.forEach(function (c) { if (c.open) c.send(msg); }); }
+
+  function wireConn(c) {
+    c.on('open', function () {
+      conns.push(c);
+      status('room ' + roomCode, true);
+      if (isHost) {
+        if (messages.length) c.send({ t: 'init', history: messages });
+      }
+    });
+    c.on('data', function (d) {
+      try { d = (typeof d === 'string') ? JSON.parse(d) : d; } catch (e) { return; }
+      if (!d || !d.t) return;
+      if (d.t === 'init') {
+        messages = [];
+        log.innerHTML = '';
+        (d.history || []).forEach(function (msg) {
+          if (msg.sys) add(msg, msg.text || 'system message');
+          else add(msg);
+        });
+        syncEmpty();
+      }
+      else if (d.t === 'hello') {
+        if (c) c._name = d.name;
+        var joined = d.name || 'someone';
+        add({ sys: true, text: joined + ' joined' }, joined + ' joined');
+        if (isHost) {
+          conns.forEach(function (conn) {
+            if (conn !== c && conn.open) conn.send(d);
+          });
+        }
+      }
+      else if (d.t === 'bye') {
+        var left = (c && c._name) ? c._name : (d.name || 'someone');
+        add({ sys: true, text: left + ' left' }, left + ' left');
+      }
+      else if (d.t === 'chat') {
+        add(d.msg);
+        if (isHost) {
+          conns.forEach(function (conn) {
+            if (conn !== c && conn.open) conn.send(d);
+          });
+        }
+      }
+    });
+    c.on('close', function () {
+      var name = c._name || null;
+      conns = conns.filter(function (x) { return x !== c; });
+      if (isHost && name) add({ sys: true, text: name + ' left' }, name + ' left');
+      else if (isHost) add({ sys: true, text: 'someone left' }, 'someone left');
+      if (!isHost && conns.length === 0) status('disconnected', false);
+    });
+    c.on('error', function () {});
+  }
+
+  var CODE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789';
+  function randCode() { var s=''; for (var i=0;i<5;i++) s+=CODE[Math.floor(Math.random()*CODE.length)]; return s; }
+  function join(code) {
+    code = (code || '').trim();
+    if (!code) return;
+    if (code.indexOf('?') !== -1 || code.indexOf('#') !== -1) {
+      try {
+        var u = new URL(code, location.href);
+        code = u.searchParams.get('r') || u.searchParams.get('room') ||
+               u.searchParams.get('R') || u.searchParams.get('ROOM') || '';
+      } catch (e) {}
+    }
+    code = code.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (!code) return;
+    if (peer) { try { peer.destroy(); } catch (e) {} }
+    if (!peerReady()) return;
+    roomCode = code; isHost = false;
+    peer = new Peer();
+    peer.on('open', function () {
+      status('joining ' + roomCode, true); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat();
+      c.on('open', function () { try { c.send({ t: 'hello', name: who() }); } catch (e) {} });
+    });
+    peer.on('error', function (err) {
+      if (err && err.type === 'peer-unavailable') status('room not found', false);
+      else status('connection error', false);
+    });
+  }
+
+  var createRetries = 0;
+  function createRoom() {
+    if (!peerReady()) return;
+    roomCode = randCode(); isHost = true;
+    peer = new Peer(roomCode);
+    peer.on('open', function (id) {
+      createRetries = 0;
+      status('hosting ' + id, true);
+      $('inviteLine').classList.remove('hidden');
+      $('inviteCode').textContent = location.href.split('?')[0] + '?r=' + id;
+      showChat();
+    });
+    peer.on('connection', wireConn);
+    peer.on('error', function (err) {
+      if (err.type === 'unavailable-id') {
+        if (createRetries++ >= 5) { status('could not create room — try again', false); createRetries = 0; return; }
+        try { peer.destroy(); } catch (e) {}
+        createRoom();
+      }
+    });
+  }
+  $('createRoom').onclick = createRoom;
+
+  function copyToClipboard(text, elem) {
+    var orig = elem.textContent;
+    function feedback() {
+      elem.textContent = 'Copied to clipboard!';
+      setTimeout(function () { elem.textContent = orig; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(feedback).catch(function () {
+        fallbackCopy(text);
+        feedback();
+      });
+    } else {
+      fallbackCopy(text);
+      feedback();
+    }
+  }
+
+  function fallbackCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) {}
+  }
+
+  $('inviteCode').onclick = function () { copyToClipboard(this.textContent, this); };
+  $('inviteCode').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      copyToClipboard(this.textContent, this);
+    }
+  });
+  if ($('copyLinkBtn')) {
+    $('copyLinkBtn').onclick = function () {
+      var url = location.href.split('?')[0] + '?r=' + roomCode;
+      copyToClipboard(url, this);
+    };
+  }
+  $('joinRoom').onclick = function () { join($('roomCode').value); };
+  $('roomCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') join($('roomCode').value); });
+
+  function send() {
+    var text = input.value.trim();
+    if (!text) return;
+    if (text.length > 2000) text = text.slice(0, 2000);
+    var msg = { from: who(), text: text, time: now(), sender: peer ? peer.id : null };
+    add(msg);
+    broadcast({ t: 'chat', msg: msg });
+    input.value = '';
+    input.focus();
+  }
+  $('send').onclick = send;
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+
+  var q = new URLSearchParams(location.search);
+  var autoRoom = (q.get('r') || q.get('room') || '').trim().toUpperCase();
+  if (autoRoom) {
+    if ($('roomCode')) $('roomCode').value = autoRoom;
+    join(autoRoom);
+  }
+})();
+</script>
+</body>
+</html>
