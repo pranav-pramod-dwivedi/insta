@@ -203,6 +203,7 @@
   }
 
   function leaveRoom() {
+    broadcast({ t: 'bye', name: who() });
     conns.forEach(function (c) { try { c.close(); } catch (e) {} });
     conns = [];
     if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
@@ -238,7 +239,6 @@
       status('room ' + roomCode, true);
       if (isHost) {
         if (messages.length) c.send({ t: 'init', history: messages });
-        add({ sys: true, text: 'someone joined' }, 'someone joined');
       }
     });
     c.on('data', function (d) {
@@ -253,6 +253,20 @@
         });
         syncEmpty();
       }
+      else if (d.t === 'hello') {
+        if (c) c._name = d.name;
+        var joined = d.name || 'someone';
+        add({ sys: true, text: joined + ' joined' }, joined + ' joined');
+        if (isHost) {
+          conns.forEach(function (conn) {
+            if (conn !== c && conn.open) conn.send(d);
+          });
+        }
+      }
+      else if (d.t === 'bye') {
+        var left = (c && c._name) ? c._name : (d.name || 'someone');
+        add({ sys: true, text: left + ' left' }, left + ' left');
+      }
       else if (d.t === 'chat') {
         add(d.msg);
         if (isHost) {
@@ -263,8 +277,10 @@
       }
     });
     c.on('close', function () {
+      var name = c._name || null;
       conns = conns.filter(function (x) { return x !== c; });
-      if (isHost) add({ sys: true, text: 'someone left' }, 'someone left');
+      if (isHost && name) add({ sys: true, text: name + ' left' }, name + ' left');
+      else if (isHost) add({ sys: true, text: 'someone left' }, 'someone left');
       if (!isHost && conns.length === 0) status('disconnected', false);
     });
     c.on('error', function () {});
@@ -289,7 +305,9 @@
     roomCode = code; isHost = false;
     peer = new Peer();
     peer.on('open', function () {
-      status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat(); });
+      status('joining ' + roomCode); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat();
+      c.on('open', function () { try { c.send({ t: 'hello', name: who() }); } catch (e) {} });
+    });
     peer.on('error', function (err) {
       if (err && err.type === 'peer-unavailable') status('room not found', false);
       else status('connection error', false);
