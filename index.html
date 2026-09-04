@@ -247,6 +247,15 @@
   }
   function broadcast(msg) { conns.forEach(function (c) { if (c.open) c.send(msg); }); }
 
+  /* Auto-reconnect to the PeerJS broker when the signaling link drops,
+     so a brief network blip doesn't silently kill the room. */
+  function wirePeerLife(p) {
+    p.on('disconnected', function () {
+      status('reconnecting…', false);
+      try { p.reconnect(); } catch (e) { status('connection lost — leave and rejoin', false); }
+    });
+  }
+
   function wireConn(c) {
     c.on('open', function () {
       conns.push(c);
@@ -318,6 +327,7 @@
     if (!peerReady()) return;
     roomCode = code; isHost = false;
     peer = new Peer();
+    wirePeerLife(peer);
     peer.on('open', function () {
       status('joining ' + roomCode, true); var c = peer.connect(code, {reliable:true}); wireConn(c); showChat();
       c.on('open', function () { try { c.send({ t: 'hello', name: who() }); } catch (e) {} });
@@ -333,6 +343,7 @@
     if (!peerReady()) return;
     roomCode = randCode(); isHost = true;
     peer = new Peer(roomCode);
+    wirePeerLife(peer);
     peer.on('open', function (id) {
       createRetries = 0;
       status('hosting ' + id, true);
