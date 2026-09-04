@@ -59,6 +59,19 @@
   .compose { display:flex; gap:10px; margin-top:14px; }
   .compose input { flex:1; }
   .compose button { flex:0 0 auto; }
+
+  /* Dark mode: respects the user's OS-level preference. No JS changes needed. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#16140F; --card:#221F18; --line:#3A3428; --ink:#F4EFE5;
+      --mut:#9A9180; --acc:#E5484D; --acc-ink:#FFF6F2;
+    }
+    .bar { background:#0E0D0A; }
+    .bar .state { color:#8A8270; }
+    .bar .state i { background:#4A463A; }
+    .msg.them .body { background:var(--card); border-color:var(--line); }
+    .invite code { background:var(--card); }
+  }
 </style>
 </head>
 <body>
