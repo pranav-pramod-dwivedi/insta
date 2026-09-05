@@ -355,8 +355,18 @@
       c.on('open', function () { try { c.send({ t: 'hello', name: who() }); } catch (e) {} });
     });
     peer.on('error', function (err) {
-      if (err && err.type === 'peer-unavailable') status('room not found', false);
-      else status('connection error', false);
+      if (err && err.type === 'peer-unavailable') {
+        status('room not found', false);
+        if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+        conns = []; roomCode = null;
+        $('landing').classList.remove('hidden');
+        $('roomBanner').classList.add('hidden');
+        $('chatlog').classList.add('hidden');
+        $('compose').classList.add('hidden');
+        log.innerHTML = '';
+      } else {
+        status('connection error', false);
+      }
     });
   }
 
